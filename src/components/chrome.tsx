@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useScroll, useSpring } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
+import { LiquidPointer } from "./liquid";
 import { CONTACTS, NAV } from "../data";
 import { Magnetic } from "./ui";
 
@@ -449,7 +450,7 @@ export function Layout({ children }: { children: ReactNode }) {
         К содержанию
       </a>
       <AmbientBackground />
-      <LiquidCursor />
+      <LiquidPointer />
       <Preloader />
       <ScrollProgress />
       <Header />

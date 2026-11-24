@@ -845,23 +845,7 @@ body {
   pointer-events: none;
 }
 
-html.has-liquid,
-html.has-liquid body,
-html.has-liquid a,
-html.has-liquid button,
-html.has-liquid .service-card,
-html.has-liquid .plate,
-html.has-liquid .carousel,
-html.has-liquid .carousel__card {
-  cursor: none;
-}
-
-html.has-liquid input,
-html.has-liquid textarea,
-html.has-liquid select,
-html.has-liquid [contenteditable="true"] {
-  cursor: auto;
-}
+/* системный курсор остаётся — эффект только дополняет его */
 
 /* ---------- ring carousel (drift) ---------- */
 
