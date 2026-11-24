@@ -23,7 +23,7 @@ import {
   Stars,
   Tilt,
 } from "./ui";
-import { CircularCarousel } from "./carousel";
+import { CircularCarousel } from "./circular";
 
 /* ================= HERO ================= */
 
@@ -454,14 +454,19 @@ export function Gallery() {
       </div>
 
       <div className="wrap">
-        <CircularCarousel
-          items={GALLERY.map((g, i) => ({
-            src: `/images/gallery-${i + 1}.jpg`,
-            label: g.label,
-            meta: g.meta,
-            tone: g.tone,
-          }))}
-        />
+        <div className="cc-shell">
+          <CircularCarousel
+            items={GALLERY.map((g, i) => ({
+              src: `/images/gallery-${i + 1}.jpg`,
+              alt: g.label,
+              title: g.label,
+              subtitle: g.meta,
+            }))}
+            cardWidth={236}
+            gap={26}
+            speed={7}
+          />
+        </div>
         <div className="gallery__hint" style={{ paddingLeft: 0 }}>
           <i />
           <span>Крутится само · потяните, чтобы ускорить</span>

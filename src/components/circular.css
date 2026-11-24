@@ -1,0 +1,141 @@
+.cc-shell {
+  position: relative;
+  height: clamp(430px, 50vw, 560px);
+}
+
+.cc {
+  --cc-w: 240px;
+  --cc-fade: #f7f2ea;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  outline: none;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.cc[data-dragging] {
+  cursor: grabbing;
+}
+
+.cc__view {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+}
+
+.cc__stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc__camera,
+.cc__ring,
+.cc__card {
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.cc__ring,
+.cc__card {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.cc__tile {
+  position: absolute;
+  left: calc(var(--cc-w) / -2);
+  width: var(--cc-w);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.cc__frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.cc__photo {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+  filter: saturate(0.84) sepia(0.1) contrast(1.02);
+}
+
+.cc__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--cc-fade);
+  opacity: var(--cc-depth, 0);
+}
+
+.cc__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 6px;
+  pointer-events: none;
+}
+
+.cc__title {
+  font-family: var(--serif);
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  color: var(--ink);
+  line-height: 1.2;
+  animation: ccIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cc__sub {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cc__count {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@keyframes ccIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc__title {
+    animation: none;
+  }
+}
