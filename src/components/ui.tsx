@@ -610,3 +610,143 @@ export function DateField({
     </div>
   );
 }
+
+/* ---------------- 3D circular carousel ---------------- */
+
+type CarouselItem = { src: string; label: string; meta: string; tone?: 1 | 2 | 3 | 4 | 5 | 6 };
+
+export function CircularCarousel({ items }: { items: CarouselItem[] }) {
+  const n = items.length;
+  const step = 360 / n;
+  const [index, setIndex] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  const ring = useRef<HTMLDivElement | null>(null);
+  const box = useRef<HTMLDivElement | null>(null);
+  const offset = useRef(0);
+  const target = useRef(0);
+  const raf = useRef(0);
+  const drag = useRef({ down: false, startX: 0, startOffset: 0, moved: false, lastX: 0, lastT: 0, vel: 0 });
+
+  useEffect(() => {
+    const loop = () => {
+      const diff = target.current - offset.current;
+      if (Math.abs(diff) > 0.0005) {
+        offset.current += diff * 0.14;
+        if (ring.current) {
+          ring.current.style.transform = `rotateY(${-offset.current * step}deg)`;
+        }
+      }
+      raf.current = requestAnimationFrame(loop);
+    };
+    raf.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf.current);
+  }, [step]);
+
+  const goTo = (i: number, immediate = false) => {
+    const base = Math.round(target.current);
+    const next = i + Math.round((base - i) / n) * n;
+    target.current = next;
+    setIndex(((i % n) + n) % n);
+    if (immediate) {
+      offset.current = next;
+      if (ring.current) ring.current.style.transform = `rotateY(${-next * step}deg)`;
+    }
+  };
+
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    drag.current = {
+      down: true,
+      startX: e.clientX,
+      startOffset: offset.current,
+      moved: false,
+      lastX: e.clientX,
+      lastT: performance.now(),
+      vel: 0,
+    };
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current.down) return;
+    const width = ring.current?.getBoundingClientRect().width || 260;
+    const dx = e.clientX - drag.current.startX;
+    if (Math.abs(dx) > 4) drag.current.moved = true;
+    offset.current = drag.current.startOffset - dx / width;
+    target.current = offset.current;
+    if (ring.current) {
+      ring.current.style.transform = `rotateY(${-offset.current * step}deg)`;
+    }
+    const now = performance.now();
+    const dt = Math.max(1, now - drag.current.lastT);
+    drag.current.vel = ((e.clientX - drag.current.lastX) / dt) * 8;
+    drag.current.lastX = e.clientX;
+    drag.current.lastT = now;
+  };
+
+  const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current.down) return;
+    drag.current.down = false;
+    setDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    const snapped = Math.round(offset.current - drag.current.vel);
+    target.current = snapped;
+    setIndex(((snapped % n) + n) % n);
+  };
+
+  return (
+    <div>
+      <div
+        className={`carousel ${dragging ? "is-dragging" : ""}`}
+        ref={box}
+        data-cursor="drag"
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
+        <div className="carousel__ring" ref={ring}>
+          {items.map((it, i) => (
+            <div
+              key={`${it.label}-${i}`}
+              className={`carousel__card ${i === index ? "is-active" : ""}`}
+              style={{ transform: `rotateY(${i * step}deg) translateZ(var(--radius))` }}
+              onClick={() => {
+                if (!drag.current.moved) goTo(i);
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={it.label}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") goTo(i);
+              }}
+            >
+              <Photo src={it.src} alt={it.label} tone={it.tone ?? 1} monogram="S" />
+              <div className="carousel__cap">
+                <span>{it.label}</span>
+                <span>{it.meta}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="carousel__controls">
+        <button className="carousel__btn" onClick={() => goTo(index - 1)} aria-label="Назад">
+          <ChevronLeft size={16} strokeWidth={1.6} />
+        </button>
+        <span className="carousel__count">
+          {String(index + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+        </span>
+        <button className="carousel__btn" onClick={() => goTo(index + 1)} aria-label="Вперёд">
+          <ChevronRight size={16} strokeWidth={1.6} />
+        </button>
+      </div>
+    </div>
+  );
+}

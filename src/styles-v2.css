@@ -720,3 +720,116 @@ body {
 .booking {
   box-shadow: 0 0 0 100vmax rgba(23, 19, 15, 0);
 }
+
+/* ---------- 3D circular carousel ---------- */
+
+.carousel {
+  position: relative;
+  perspective: 1500px;
+  height: clamp(380px, 46vw, 560px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.carousel.is-dragging {
+  cursor: grabbing;
+}
+.carousel::before,
+.carousel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12%;
+  z-index: 5;
+  pointer-events: none;
+}
+.carousel::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--amb-base, #f7f2ea), transparent);
+}
+.carousel::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--amb-base, #f7f2ea), transparent);
+}
+.carousel__ring {
+  --cw: clamp(200px, 22vw, 300px);
+  --radius: calc(var(--cw) * 1.15);
+  position: relative;
+  width: var(--cw);
+  aspect-ratio: 3 / 4;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.carousel__card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--paper-2);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  cursor: pointer;
+  transition: filter 0.45s var(--ease);
+  filter: brightness(0.92) saturate(0.9);
+}
+.carousel__card.is-active {
+  filter: none;
+}
+.carousel__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(180deg, transparent 58%, rgba(23, 19, 15, 0.5));
+  pointer-events: none;
+}
+.carousel__cap {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 6;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 242, 234, 0.92);
+}
+.carousel__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 26px;
+}
+.carousel__btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+.carousel__btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.carousel__count {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  min-width: 64px;
+  text-align: center;
+}

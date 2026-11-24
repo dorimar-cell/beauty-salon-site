@@ -13,8 +13,8 @@ import {
 } from "../data";
 import {
   Accordion,
+  CircularCarousel,
   DateField,
-  DragGallery,
   Magnetic,
   Marquee,
   Photo,
@@ -453,26 +453,18 @@ export function Gallery() {
         </div>
       </div>
 
-      <div className="gallery">
-        <DragGallery>
-          {GALLERY.map((g, i) => (
-            <figure className="plate" key={`${g.label}-${i}`}>
-              <Photo
-                src={`/images/gallery-${i + 1}.jpg`}
-                alt={g.label}
-                tone={g.tone}
-                monogram={g.label.slice(0, 1)}
-              />
-              <figcaption>
-                <span>{g.label}</span>
-                <span>{g.meta}</span>
-              </figcaption>
-            </figure>
-          ))}
-        </DragGallery>
-        <div className="gallery__hint">
+      <div className="wrap">
+        <CircularCarousel
+          items={GALLERY.map((g, i) => ({
+            src: `/images/gallery-${i + 1}.jpg`,
+            label: g.label,
+            meta: g.meta,
+            tone: g.tone,
+          }))}
+        />
+        <div className="gallery__hint" style={{ paddingLeft: 0 }}>
           <i />
-          <span>Тяните мышью в сторону</span>
+          <span>Тяните мышью · нажмите на карточку, чтобы приблизить</span>
         </div>
       </div>
     </section>
