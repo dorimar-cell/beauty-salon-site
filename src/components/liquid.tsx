@@ -5,7 +5,7 @@ type RGB = [number, number, number];
 /** Контрастная палитра в брендовой гамме: бронза, эспрессо, шалфей, роза, шампань, терракота */
 const PALETTE: RGB[] = [
   [176, 116, 62],
-  [74, 53, 39],
+  [126, 96, 72],
   [122, 140, 104],
   [176, 106, 92],
   [214, 186, 140],
@@ -65,13 +65,13 @@ export function LiquidPointer() {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    void 0;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let w = 0;
@@ -101,7 +101,8 @@ export function LiquidPointer() {
     const holders =
       ".plate, .master, .work__frame, .hero__arch, .space__frame, .case-hero__frame, .ring-carousel__card, .carousel__card, .cc__card";
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent | PointerEvent) => {
+      if ("pointerType" in e && e.pointerType === "touch") return;
       mx = e.clientX;
       my = e.clientY;
 
@@ -114,13 +115,13 @@ export function LiquidPointer() {
       const dy = my - ly;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist > 11) {
+      if (dist > 8) {
         traveled += dist;
         if (traveled > 110) {
           traveled = 0;
           colorIdx = (colorIdx + 1) % PALETTE.length;
         }
-        blobs.push({ x: mx, y: my, r: 9, life: 1, c: { ...current } });
+        blobs.push({ x: mx, y: my, r: 26, life: 1, c: { ...current } });
         if (blobs.length > 54) blobs.shift();
         lx = mx;
         ly = my;
@@ -134,10 +135,10 @@ export function LiquidPointer() {
       const want: RGB = fromImage ? tone(fromImage) : PALETTE[colorIdx];
       current = mix(current, want, 0.06);
 
-      const haloR = 178;
+      const haloR = 190;
       const halo = ctx.createRadialGradient(mx, my, 0, mx, my, haloR);
-      halo.addColorStop(0, `rgba(${current[0]},${current[1]},${current[2]},0.085)`);
-      halo.addColorStop(0.55, `rgba(${current[0]},${current[1]},${current[2]},0.035)`);
+      halo.addColorStop(0, `rgba(${current[0]},${current[1]},${current[2]},0.17)`);
+      halo.addColorStop(0.55, `rgba(${current[0]},${current[1]},${current[2]},0.08)`);
       halo.addColorStop(1, `rgba(${current[0]},${current[1]},${current[2]},0)`);
       ctx.fillStyle = halo;
       ctx.beginPath();
@@ -146,16 +147,16 @@ export function LiquidPointer() {
 
       for (let i = blobs.length - 1; i >= 0; i -= 1) {
         const b = blobs[i];
-        b.r += 2.3;
-        b.life -= 0.02;
+        b.r += 3.0;
+        b.life -= 0.013;
         if (b.life <= 0) {
           blobs.splice(i, 1);
           continue;
         }
         const c = b.c;
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-        g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.105 * b.life})`);
-        g.addColorStop(0.6, `rgba(${c[0]},${c[1]},${c[2]},${0.055 * b.life})`);
+        g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.22 * b.life})`);
+        g.addColorStop(0.6, `rgba(${c[0]},${c[1]},${c[2]},${0.11 * b.life})`);
         g.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
         ctx.fillStyle = g;
         ctx.beginPath();
@@ -167,11 +168,13 @@ export function LiquidPointer() {
     };
 
     raf = requestAnimationFrame(draw);
+    window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("mousemove", onMove, { passive: true });
     window.addEventListener("resize", resize);
 
     return () => {
       cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("resize", resize);
     };
