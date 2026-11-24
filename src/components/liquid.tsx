@@ -1,33 +1,31 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 
 type RGB = [number, number, number];
 
-/** Палитра движения: бронза → тёмная бронза → шалфей → пудра → шампань. */
+/** Контрастная палитра в брендовой гамме: бронза, эспрессо, шалфей, роза, шампань, терракота */
 const PALETTE: RGB[] = [
-  [168, 126, 82],
-  [125, 88, 54],
-  [140, 154, 130],
-  [201, 163, 154],
-  [217, 196, 169],
-  [176, 143, 106],
+  [176, 116, 62],
+  [74, 53, 39],
+  [122, 140, 104],
+  [176, 106, 92],
+  [214, 186, 140],
+  [156, 84, 54],
 ];
 
 const PAPER: RGB = [247, 242, 234];
 
-function mix(a: RGB, b: RGB, t: number): RGB {
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * t),
-    Math.round(a[1] + (b[1] - a[1]) * t),
-    Math.round(a[2] + (b[2] - a[2]) * t),
-  ];
-}
+const mix = (a: RGB, b: RGB, t: number): RGB => [
+  Math.round(a[0] + (b[0] - a[0]) * t),
+  Math.round(a[1] + (b[1] - a[1]) * t),
+  Math.round(a[2] + (b[2] - a[2]) * t),
+];
 
-/** Приводим цвет фото к нашей гамме: слегка обесцвечиваем и подмешиваем бумагу. */
-function tone(c: RGB): RGB {
+/** Цвет фото подмешиваем к палитре, но оставляем насыщенным */
+const tone = (c: RGB): RGB => {
   const gray = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
-  const desat = mix(c, [gray, gray, gray], 0.28);
-  return mix(desat, PAPER, 0.18);
-}
+  const desat = mix(c, [gray, gray, gray], 0.1);
+  return mix(desat, PAPER, 0.06);
+};
 
 const cache = new WeakMap<HTMLImageElement, RGB | null>();
 
@@ -101,14 +99,13 @@ export function LiquidPointer() {
     const blobs: Blob[] = [];
 
     const holders =
-      ".plate, .master, .work__frame, .hero__arch, .space__frame, .case-hero__frame, .ring-carousel__card, .carousel__card";
+      ".plate, .master, .work__frame, .hero__arch, .space__frame, .case-hero__frame, .ring-carousel__card, .carousel__card, .cc__card";
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX;
       my = e.clientY;
 
       const el = e.target as HTMLElement | null;
-
       const holder = el?.closest(holders) as HTMLElement | null;
       const img = holder?.querySelector("img") as HTMLImageElement | null;
       fromImage = img ? imageColor(img) : null;
@@ -117,16 +114,14 @@ export function LiquidPointer() {
       const dy = my - ly;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist > 9) {
+      if (dist > 11) {
         traveled += dist;
         if (traveled > 110) {
           traveled = 0;
           colorIdx = (colorIdx + 1) % PALETTE.length;
         }
-
-        // блики крупнее на 35%, цвет фиксируется в момент рождения
-        blobs.push({ x: mx, y: my, r: 8, life: 1, c: { ...current } });
-        if (blobs.length > 84) blobs.shift();
+        blobs.push({ x: mx, y: my, r: 9, life: 1, c: { ...current } });
+        if (blobs.length > 54) blobs.shift();
         lx = mx;
         ly = my;
       }
@@ -137,11 +132,12 @@ export function LiquidPointer() {
       ctx.clearRect(0, 0, w, h);
 
       const want: RGB = fromImage ? tone(fromImage) : PALETTE[colorIdx];
-      current = mix(current, want, 0.055);
+      current = mix(current, want, 0.06);
 
-      const haloR = 162; // +35%
+      const haloR = 178;
       const halo = ctx.createRadialGradient(mx, my, 0, mx, my, haloR);
-      halo.addColorStop(0, `rgba(${current[0]},${current[1]},${current[2]},0.05)`);
+      halo.addColorStop(0, `rgba(${current[0]},${current[1]},${current[2]},0.085)`);
+      halo.addColorStop(0.55, `rgba(${current[0]},${current[1]},${current[2]},0.035)`);
       halo.addColorStop(1, `rgba(${current[0]},${current[1]},${current[2]},0)`);
       ctx.fillStyle = halo;
       ctx.beginPath();
@@ -150,16 +146,16 @@ export function LiquidPointer() {
 
       for (let i = blobs.length - 1; i >= 0; i -= 1) {
         const b = blobs[i];
-        b.r += 2.0;
-        b.life -= 0.012;
+        b.r += 2.3;
+        b.life -= 0.02;
         if (b.life <= 0) {
           blobs.splice(i, 1);
           continue;
         }
         const c = b.c;
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-        g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.042 * b.life})`);
-        g.addColorStop(0.65, `rgba(${c[0]},${c[1]},${c[2]},${0.026 * b.life})`);
+        g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.105 * b.life})`);
+        g.addColorStop(0.6, `rgba(${c[0]},${c[1]},${c[2]},${0.055 * b.life})`);
         g.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
         ctx.fillStyle = g;
         ctx.beginPath();
