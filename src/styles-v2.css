@@ -833,3 +833,32 @@ body {
   min-width: 64px;
   text-align: center;
 }
+
+/* ---------- liquid pointer ---------- */
+
+.liquid {
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+html.has-liquid,
+html.has-liquid body,
+html.has-liquid a,
+html.has-liquid button,
+html.has-liquid .service-card,
+html.has-liquid .plate,
+html.has-liquid .carousel,
+html.has-liquid .carousel__card {
+  cursor: none;
+}
+
+html.has-liquid input,
+html.has-liquid textarea,
+html.has-liquid select,
+html.has-liquid [contenteditable="true"] {
+  cursor: auto;
+}

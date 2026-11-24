@@ -112,6 +112,118 @@ export function Cursor() {
   );
 }
 
+/* ---------------- liquid pointer ---------------- */
+
+export function LiquidCursor() {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const root = document.documentElement;
+    root.classList.add("has-liquid");
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0;
+    let h = 0;
+
+    const resize = () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+
+    let mx = -999;
+    let my = -999;
+    let lx = 0;
+    let ly = 0;
+    let dark = false;
+
+    type Blob = { x: number; y: number; r: number; life: number; dark: boolean };
+    const blobs: Blob[] = [];
+
+    const onMove = (e: MouseEvent) => {
+      mx = e.clientX;
+      my = e.clientY;
+      const el = e.target as HTMLElement | null;
+      dark = Boolean(el?.closest(".reviews, .booking, .footer, .menu, .preloader"));
+
+      const dx = mx - lx;
+      const dy = my - ly;
+      if (dx * dx + dy * dy > 90) {
+        blobs.push({ x: mx, y: my, r: 6, life: 1, dark });
+        if (blobs.length > 64) blobs.shift();
+        lx = mx;
+        ly = my;
+      }
+    };
+
+    let raf = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+
+      const halo = ctx.createRadialGradient(mx, my, 0, mx, my, 120);
+      const hc = dark ? "247,242,234" : "168,126,82";
+      halo.addColorStop(0, `rgba(${hc},0.05)`);
+      halo.addColorStop(1, `rgba(${hc},0)`);
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(mx, my, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let i = blobs.length - 1; i >= 0; i -= 1) {
+        const b = blobs[i];
+        b.r += 1.5;
+        b.life -= 0.013;
+        if (b.life <= 0) {
+          blobs.splice(i, 1);
+          continue;
+        }
+        const col = b.dark ? "247,242,234" : "168,126,82";
+        const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        g.addColorStop(0, `rgba(${col},${0.045 * b.life})`);
+        g.addColorStop(0.65, `rgba(${col},${0.028 * b.life})`);
+        g.addColorStop(1, `rgba(${col},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (mx > -100) {
+        ctx.fillStyle = dark ? "rgba(247,242,234,0.6)" : "rgba(23,19,15,0.42)";
+        ctx.beginPath();
+        ctx.arc(mx, my, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    raf = requestAnimationFrame(draw);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("resize", resize);
+
+    return () => {
+      root.classList.remove("has-liquid");
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas className="liquid" ref={ref} aria-hidden="true" />;
+}
+
 /* ---------------- ambient color field ---------------- */
 
 export function AmbientBackground() {
@@ -337,9 +449,9 @@ export function Layout({ children }: { children: ReactNode }) {
         К содержанию
       </a>
       <AmbientBackground />
+      <LiquidCursor />
       <Preloader />
       <ScrollProgress />
-      <Cursor />
       <Header />
       <main id="main">{children}</main>
       <Footer />
