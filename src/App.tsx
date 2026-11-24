@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Layout, useSmoothScroll } from "./components/chrome";
-import { ContactsPage, Home, MastersPage, NotFound, ServicesPage } from "./pages";
+import { CasePage, ContactsPage, Home, MastersPage, NotFound, PortfolioPage, ServicesPage } from "./pages";
 
 function ScrollManager() {
   const { pathname, hash } = useLocation();
@@ -35,6 +35,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/masters" element={<MastersPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/portfolio/:slug" element={<CasePage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

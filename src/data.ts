@@ -3,6 +3,7 @@ export type NavItem = { label: string; to: string };
 export const NAV: NavItem[] = [
   { label: "Услуги", to: "/services" },
   { label: "Мастера", to: "/masters" },
+  { label: "Работы", to: "/portfolio" },
   { label: "Ритуал", to: "/#ritual" },
   { label: "Отзывы", to: "/#reviews" },
   { label: "Контакты", to: "/contacts" },

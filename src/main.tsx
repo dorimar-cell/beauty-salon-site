@@ -7,6 +7,7 @@ import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 
 import "./styles.css";
+import "./styles-v2.css";
 import App from "./App";
 
 createRoot(document.getElementById("root")!).render(

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import {
   CONTACTS,
@@ -14,10 +13,13 @@ import {
 } from "../data";
 import {
   Accordion,
+  DateField,
+  DragGallery,
   Magnetic,
   Marquee,
   Photo,
   Reveal,
+  SelectField,
   SplitText,
   Stars,
   Tilt,
@@ -228,20 +230,44 @@ export function Philosophy() {
           ))}
         </div>
 
-        <Reveal delay={100}>
-          <figure className="interior-plate">
-            <Photo
-              src="/images/interior.jpg"
-              alt="Интерьер студии Séraphine на Малой Бронной"
-              tone={2}
-              monogram="S"
-            />
-            <figcaption>
-              <span>Студия · Малая Бронная, 12</span>
-              <span>2014 — 2026</span>
-            </figcaption>
-          </figure>
-        </Reveal>
+        <div className="space mt-40">
+          <Reveal>
+            <div className="space__text">
+              <span className="eyebrow">Пространство</span>
+              <h2>Две зоны, один ритм</h2>
+              <p>
+                Светлая зона для волос и ногтей, тихая — для косметологии.
+                Никаких пересечений: пока вы в кресле, рядом не запускают
+                следующего гостя.
+              </p>
+              <ul className="space__list">
+                <li>
+                  <span>01</span> Отдельный вход и гардероб
+                </li>
+                <li>
+                  <span>02</span> Кофе, вода и тишина без музыки из колонки
+                </li>
+                <li>
+                  <span>03</span> Стерилизация инструмента при вас
+                </li>
+              </ul>
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <figure className="space__frame" style={{ margin: 0 }}>
+              <Photo
+                src="/images/interior.jpg"
+                alt="Интерьер студии Séraphine на Малой Бронной"
+                tone={2}
+                monogram="S"
+              />
+              <figcaption className="space__caption">
+                <span>Студия · Малая Бронная, 12</span>
+                <span>2014 — 2026</span>
+              </figcaption>
+            </figure>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
@@ -428,11 +454,11 @@ export function Gallery() {
       </div>
 
       <div className="gallery">
-        <div className="gallery__track">
-          {[...GALLERY, ...GALLERY].map((g, i) => (
+        <DragGallery>
+          {GALLERY.map((g, i) => (
             <figure className="plate" key={`${g.label}-${i}`}>
               <Photo
-                src={`/images/gallery-${(i % GALLERY.length) + 1}.jpg`}
+                src={`/images/gallery-${i + 1}.jpg`}
                 alt={g.label}
                 tone={g.tone}
                 monogram={g.label.slice(0, 1)}
@@ -443,6 +469,10 @@ export function Gallery() {
               </figcaption>
             </figure>
           ))}
+        </DragGallery>
+        <div className="gallery__hint">
+          <i />
+          <span>Тяните мышью в сторону</span>
         </div>
       </div>
     </section>
@@ -488,24 +518,21 @@ export function Reviews() {
         </div>
 
         <div className="reviews__stage">
-          <AnimatePresence mode="wait">
-            <motion.blockquote
-              key={index}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              style={{ margin: 0 }}
+          {TESTIMONIALS.map((t, i) => (
+            <blockquote
+              key={t.name}
+              className={`reviews__item ${i === index ? "is-active" : ""}`}
+              aria-hidden={i !== index}
             >
-              <p className="quote">«{item.text}»</p>
+              <p className="quote">«{t.text}»</p>
               <footer className="quote__author">
                 <i />
                 <span>
-                  {item.name} · {item.service}
+                  {t.name} · {t.service}
                 </span>
               </footer>
-            </motion.blockquote>
-          </AnimatePresence>
+            </blockquote>
+          ))}
         </div>
 
         <div className="reviews__controls">
@@ -633,25 +660,22 @@ export function Booking({ compact = false }: { compact?: boolean }) {
                 <span className="field__error">{errors.phone}</span>
               </div>
 
-              <div className="field">
-                <label htmlFor="bf-service">Услуга</label>
-                <select id="bf-service" value={values.service} onChange={set("service")}>
-                  <option value="">Выберите</option>
-                  {SERVICES.map((s) => (
-                    <option key={s.id} value={s.title}>
-                      {s.title}
-                    </option>
-                  ))}
-                  <option value="Не знаю">Пока не знаю</option>
-                </select>
-                <span className="field__error">{errors.service}</span>
-              </div>
+              <SelectField
+                label="Услуга"
+                value={values.service}
+                error={errors.service}
+                options={[...SERVICES.map((s) => s.title), "Пока не знаю"]}
+                onChange={(v) => {
+                  setValues((prev) => ({ ...prev, service: v }));
+                  setErrors((er) => ({ ...er, service: "" }));
+                }}
+              />
 
-              <div className="field">
-                <label htmlFor="bf-date">Удобная дата</label>
-                <input id="bf-date" type="date" value={values.date} onChange={set("date")} />
-                <span className="field__error" />
-              </div>
+              <DateField
+                label="Удобная дата"
+                value={values.date}
+                onChange={(v) => setValues((prev) => ({ ...prev, date: v }))}
+              />
 
               <div className="field field--full">
                 <label htmlFor="bf-comment">Комментарий</label>

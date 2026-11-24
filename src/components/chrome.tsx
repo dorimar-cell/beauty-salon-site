@@ -54,6 +54,7 @@ export function ScrollProgress() {
 export function Cursor() {
   const dot = useRef<HTMLDivElement | null>(null);
   const ring = useRef<HTMLDivElement | null>(null);
+  const lbl = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
     if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
@@ -70,14 +71,23 @@ export function Cursor() {
       if (dot.current) {
         dot.current.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
       }
+
       const target = e.target as HTMLElement | null;
-      const interactive = target?.closest("a, button, .service-card, .plate, .master");
+      const labelled = target?.closest("[data-cursor]") as HTMLElement | null;
+      const interactive = target?.closest("a, button, .service-card, .plate, .master, .work");
+      const dark = Boolean(target?.closest(".reviews, .booking, .menu, .preloader, .footer"));
+
+      const isDrag = labelled?.dataset.cursor === "drag";
       ring.current?.classList.toggle("is-active", Boolean(interactive));
+      ring.current?.classList.toggle("is-drag", isDrag);
+      ring.current?.classList.toggle("is-light", dark);
+      dot.current?.classList.toggle("is-light", dark);
+      if (lbl.current) lbl.current.textContent = isDrag ? "тянуть" : "";
     };
 
     const loop = () => {
-      rx += (mx - rx) * 0.14;
-      ry += (my - ry) * 0.14;
+      rx += (mx - rx) * 0.16;
+      ry += (my - ry) * 0.16;
       if (ring.current) {
         ring.current.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
       }
@@ -94,8 +104,47 @@ export function Cursor() {
 
   return (
     <>
-      <div className="cursor cursor--ring" ref={ring} aria-hidden="true" />
+      <div className="cursor cursor--ring" ref={ring} aria-hidden="true">
+        <span ref={lbl} />
+      </div>
       <div className="cursor cursor--dot" ref={dot} aria-hidden="true" />
+    </>
+  );
+}
+
+/* ---------------- ambient color field ---------------- */
+
+export function AmbientBackground() {
+  useEffect(() => {
+    const root = document.documentElement;
+    let raf = 0;
+
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const t = max > 0 ? window.scrollY / max : 0;
+      const mode = t > 0.86 ? "ink" : t > 0.6 ? "bronze" : t > 0.3 ? "sage" : "paper";
+      if (root.dataset.amb !== mode) root.dataset.amb = mode;
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  return (
+    <>
+      <div className="ambient" aria-hidden="true" />
+      <div className="ambient-veil" aria-hidden="true" />
     </>
   );
 }
@@ -287,6 +336,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <a href="#main" className="skip-link">
         К содержанию
       </a>
+      <AmbientBackground />
       <Preloader />
       <ScrollProgress />
       <Cursor />

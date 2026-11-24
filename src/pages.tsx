@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { CONTACTS, MASTERS, PRICE_GROUPS } from "./data";
@@ -17,6 +17,7 @@ import {
   ServicesSection,
 } from "./components/sections";
 import { Marquee, Photo, Reveal } from "./components/ui";
+import { WORKS } from "./works";
 
 /* ---------------- HOME ---------------- */
 
@@ -288,6 +289,162 @@ export function NotFound() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/* ---------------- PORTFOLIO ---------------- */
+
+export function PortfolioPage() {
+  return (
+    <div className="page">
+      <section className="page-hero">
+        <div className="wrap">
+          <Reveal>
+            <span className="eyebrow">Портфолио</span>
+          </Reveal>
+          <Reveal delay={80}>
+            <h1>Работы, которые говорят за нас</h1>
+          </Reveal>
+          <div className="page-hero__row mt-24">
+            <Reveal delay={140}>
+              <p>
+                Шесть историй с задачей, решением и результатом. Без «до/после»
+                на телефон и без фильтров — только то, что можно повторить.
+              </p>
+            </Reveal>
+            <Reveal delay={200}>
+              <Link to="/contacts" className="btn">
+                <span>Записаться</span>
+                <ArrowUpRight size={15} strokeWidth={1.6} />
+              </Link>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="wrap">
+          <div className="works">
+            {WORKS.map((w, i) => (
+              <Reveal key={w.slug} delay={(i % 3) * 80}>
+                <Link to={`/portfolio/${w.slug}`} className="work">
+                  <div className="work__frame">
+                    <Photo
+                      src={w.image}
+                      alt={w.title}
+                      tone={1}
+                      monogram={w.title.slice(0, 1)}
+                    />
+                    <span className="work__tag">{w.tag}</span>
+                  </div>
+                  <div className="work__meta">
+                    <span>{w.master}</span>
+                    <span>{w.duration}</span>
+                  </div>
+                  <div className="work__title">{w.title}</div>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Booking compact />
+    </div>
+  );
+}
+
+/* ---------------- CASE ---------------- */
+
+export function CasePage() {
+  const { slug } = useParams();
+  const work = WORKS.find((w) => w.slug === slug);
+
+  if (!work) return <NotFound />;
+
+  return (
+    <div className="page">
+      <section className="wrap case-hero">
+        <div>
+          <Reveal>
+            <Link to="/portfolio" className="link-arrow">
+              Все работы
+            </Link>
+          </Reveal>
+          <Reveal delay={60}>
+            <h1>{work.title}</h1>
+          </Reveal>
+          <Reveal delay={120}>
+            <p className="lead" style={{ marginTop: 20 }}>
+              {work.short}
+            </p>
+          </Reveal>
+          <div className="case-meta">
+            <div>
+              <span>Мастер</span>
+              <b>{work.master}</b>
+            </div>
+            <div>
+              <span>Категория</span>
+              <b>{work.tag}</b>
+            </div>
+            <div>
+              <span>Время</span>
+              <b>{work.duration}</b>
+            </div>
+          </div>
+        </div>
+        <Reveal delay={100}>
+          <figure className="case-hero__frame" style={{ margin: 0 }}>
+            <Photo src={work.image} alt={work.title} tone={1} monogram="S" />
+          </figure>
+        </Reveal>
+      </section>
+
+      <section className="section section--tight">
+        <div className="wrap case-body">
+          <Reveal>
+            <h2>Задача</h2>
+          </Reveal>
+          <div>
+            <Reveal delay={80}>
+              <p>{work.task}</p>
+            </Reveal>
+            <Reveal delay={140}>
+              <h3 style={{ marginTop: 34 }}>Что сделали</h3>
+              <ul className="case-list">
+                {work.solution.map((s, i) => (
+                  <li key={s}>
+                    <span>{String(i + 1).padStart(2, "0")}</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+            <Reveal delay={200}>
+              <h3 style={{ marginTop: 34 }}>Результат</h3>
+              <p>{work.result}</p>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="wrap">
+          <div className="case-gallery">
+            {work.gallery.map((g, i) => (
+              <Reveal key={`${g}-${i}`} delay={i * 80}>
+                <figure className="work__frame" style={{ margin: 0 }}>
+                  <Photo src={g} alt={work.title} tone={2} monogram="S" />
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Booking compact />
     </div>
   );
 }

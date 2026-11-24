@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 /* ---------------- Reveal on scroll ---------------- */
 
@@ -26,12 +26,9 @@ export function Reveal({
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setSeen(true);
-          io.disconnect();
-        }
+        setSeen(entries[0]?.isIntersecting ?? false);
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.1, rootMargin: "0px 0px -6% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -201,17 +198,11 @@ export function Photo({
       </div>
       {src && !failed ? (
         <img
+          className="photo-img"
           src={src}
           alt={alt}
+          loading="lazy"
           onError={() => setFailed(true)}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            zIndex: 2,
-          }}
         />
       ) : null}
       <span className="sr-only">{alt}</span>
@@ -295,5 +286,327 @@ export function CheckMark() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+/* ---------------- Drag gallery ---------------- */
+
+export function DragGallery({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const vp = useRef<HTMLDivElement | null>(null);
+  const tr = useRef<HTMLDivElement | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    const view = vp.current;
+    const track = tr.current;
+    if (!view || !track) return;
+
+    let x = 0;
+    let startX = 0;
+    let startOffset = 0;
+    let down = false;
+    let moved = false;
+    let vel = 0;
+    let lastX = 0;
+    let lastT = 0;
+    let raf = 0;
+
+    const min = () => Math.min(0, view.clientWidth - track.scrollWidth);
+    const clamp = (v: number) => Math.max(min(), Math.min(0, v));
+    const apply = (v: number) => {
+      track.style.transform = `translate3d(${v}px,0,0)`;
+    };
+
+    const downH = (e: PointerEvent) => {
+      down = true;
+      moved = false;
+      startX = e.clientX;
+      startOffset = x;
+      lastX = e.clientX;
+      lastT = performance.now();
+      vel = 0;
+      cancelAnimationFrame(raf);
+      view.setPointerCapture(e.pointerId);
+      setDragging(true);
+    };
+
+    const moveH = (e: PointerEvent) => {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 4) moved = true;
+      x = clamp(startOffset + dx);
+      apply(x);
+      const now = performance.now();
+      const dt = Math.max(1, now - lastT);
+      vel = ((e.clientX - lastX) / dt) * 16;
+      lastX = e.clientX;
+      lastT = now;
+    };
+
+    const upH = (e: PointerEvent) => {
+      if (!down) return;
+      down = false;
+      setDragging(false);
+      try {
+        view.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      const step = () => {
+        if (Math.abs(vel) < 0.4) return;
+        x = clamp(x + vel);
+        apply(x);
+        vel *= 0.94;
+        raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+
+    const clickH = (e: MouseEvent) => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    view.addEventListener("pointerdown", downH);
+    view.addEventListener("pointermove", moveH);
+    view.addEventListener("pointerup", upH);
+    view.addEventListener("pointercancel", upH);
+    view.addEventListener("click", clickH, true);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      view.removeEventListener("pointerdown", downH);
+      view.removeEventListener("pointermove", moveH);
+      view.removeEventListener("pointerup", upH);
+      view.removeEventListener("pointercancel", upH);
+      view.removeEventListener("click", clickH, true);
+    };
+  }, []);
+
+  return (
+    <div
+      className={`gallery__viewport ${dragging ? "is-dragging" : ""} ${className}`.trim()}
+      ref={vp}
+      data-cursor="drag"
+    >
+      <div className="gallery__track" ref={tr}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Custom select ---------------- */
+
+export function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  error,
+  placeholder = "Выберите",
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  error?: string;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="select" ref={box}>
+        <button
+          type="button"
+          className="select__btn"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span style={value ? undefined : { color: "rgba(247,242,234,.32)" }}>
+            {value || placeholder}
+          </span>
+          <ChevronDown size={14} strokeWidth={1.6} />
+        </button>
+        {open ? (
+          <ul className="select__list" role="listbox">
+            {options.map((o) => (
+              <li key={o}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={value === o}
+                  className={`select__opt ${value === o ? "is-selected" : ""}`}
+                  onClick={() => {
+                    onChange(o);
+                    setOpen(false);
+                  }}
+                >
+                  {o}
+                  <Check size={13} strokeWidth={1.8} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <span className="field__error">{error}</span>
+    </div>
+  );
+}
+
+/* ---------------- Custom date picker ---------------- */
+
+const MONTHS_GEN = [
+  "января", "февраля", "марта", "апреля", "мая", "июня",
+  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+];
+const MONTHS_NOM = [
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+];
+const DOW = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+function toISO(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+export function DateField({
+  label,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState(() => {
+    const base = value ? new Date(value) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+  const box = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const first = new Date(view.getFullYear(), view.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array.from({ length: offset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  const label2 = value
+    ? `${Number(value.slice(8, 10))} ${MONTHS_GEN[Number(value.slice(5, 7)) - 1]} ${value.slice(0, 4)}`
+    : "Выберите дату";
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="cal" ref={box}>
+        <button
+          type="button"
+          className="cal__btn"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className={value ? "" : "is-empty"}>{label2}</span>
+          <ChevronDown size={14} strokeWidth={1.6} />
+        </button>
+
+        {open ? (
+          <div className="cal__pop">
+            <div className="cal__head">
+              <button
+                type="button"
+                className="cal__nav"
+                aria-label="Предыдущий месяц"
+                onClick={() =>
+                  setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))
+                }
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="cal__title">
+                {MONTHS_NOM[view.getMonth()]} {view.getFullYear()}
+              </span>
+              <button
+                type="button"
+                className="cal__nav"
+                aria-label="Следующий месяц"
+                onClick={() =>
+                  setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))
+                }
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+            <div className="cal__grid">
+              {DOW.map((d) => (
+                <span className="cal__dow" key={d}>
+                  {d}
+                </span>
+              ))}
+              {cells.map((day, i) => {
+                if (day === null) return <span className="cal__day is-empty" key={`e-${i}`} />;
+                const date = new Date(view.getFullYear(), view.getMonth(), day);
+                const iso = toISO(date);
+                const past = date < today;
+                return (
+                  <button
+                    type="button"
+                    key={iso}
+                    className={`cal__day ${iso === value ? "is-sel" : ""} ${
+                      iso === toISO(today) ? "is-today" : ""
+                    }`}
+                    disabled={past}
+                    onClick={() => {
+                      onChange(iso);
+                      setOpen(false);
+                    }}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <span className="field__error">{error}</span>
+    </div>
   );
 }
