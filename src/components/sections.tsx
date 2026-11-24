@@ -13,7 +13,6 @@ import {
 } from "../data";
 import {
   Accordion,
-  CircularCarousel,
   DateField,
   Magnetic,
   Marquee,
@@ -24,6 +23,7 @@ import {
   Stars,
   Tilt,
 } from "./ui";
+import { CircularCarousel } from "./carousel";
 
 /* ================= HERO ================= */
 
@@ -464,7 +464,7 @@ export function Gallery() {
         />
         <div className="gallery__hint" style={{ paddingLeft: 0 }}>
           <i />
-          <span>Тяните мышью · нажмите на карточку, чтобы приблизить</span>
+          <span>Крутится само · потяните, чтобы ускорить</span>
         </div>
       </div>
     </section>
