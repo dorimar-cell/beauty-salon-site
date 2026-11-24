@@ -1,6 +1,6 @@
 .cc-shell {
   position: relative;
-  height: clamp(430px, 50vw, 560px);
+  height: clamp(520px, 56vw, 740px);
 }
 
 .cc {

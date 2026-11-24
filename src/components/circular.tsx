@@ -1,4 +1,4 @@
-/* Адаптация React Bits Circular Carousel под палитру SÉRAPHINE */
+﻿/* Адаптация React Bits Circular Carousel под палитру SÉRAPHINE */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "./circular.css";
 
@@ -39,22 +39,32 @@ export function CircularCarousel({
 }) {
   const count = items.length;
   const step = 360 / count;
-  const cardW = cardWidth;
-  const cardH = cardWidth;
+
+  const [cw, setCw] = useState(cardWidth);
+
+  useEffect(() => {
+    const calc = () => {
+      const target = Math.min(cardWidth * 1.75, Math.max(230, window.innerWidth * 0.27));
+      setCw(Math.round(target));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, [cardWidth]);
 
   const radius = useMemo(() => {
     const n = Math.max(count, 3);
-    const pitch = cardW + gap;
-    return Math.max(pitch / (2 * Math.sin(Math.PI / n)), cardW * 0.6);
-  }, [count, cardW, gap]);
+    const pitch = cw + gap;
+    return Math.max(pitch / (2 * Math.sin(Math.PI / n)), cw * 0.6);
+  }, [count, cw, gap]);
 
   const tiles = useMemo(() => {
-    const length = cardH / TILES;
+    const length = cw / TILES;
     const bend = radius;
     return Array.from({ length: TILES }, (_, index) => {
       const start = index * length - (index > 0 ? OVERLAP / 2 : 0);
       const end = (index + 1) * length + (index < TILES - 1 ? OVERLAP / 2 : 0);
-      const center = (start + end) / 2 - cardH / 2;
+      const center = (start + end) / 2 - cw / 2;
       const alpha = center / bend;
       const shift = bend * Math.sin(alpha);
       const sink = bend * (1 - Math.cos(alpha));
@@ -66,7 +76,7 @@ export function CircularCarousel({
         move: `translate3d(0px, ${shift}px, ${-sink}px) rotateX(${-turn}deg)`,
       };
     });
-  }, [cardH, radius]);
+  }, [cw, radius]);
 
   const root = useRef<HTMLDivElement | null>(null);
   const stage = useRef<HTMLDivElement | null>(null);
@@ -323,7 +333,7 @@ export function CircularCarousel({
     <div
       className="cc"
       ref={root}
-      style={{ "--cc-fade": fadeColor, "--cc-w": `${cardW}px` } as React.CSSProperties}
+      style={{ "--cc-fade": fadeColor, "--cc-w": `${cw}px` } as React.CSSProperties}
       data-dragging={dragging ? "" : undefined}
       tabIndex={0}
       role="region"
@@ -381,7 +391,7 @@ export function CircularCarousel({
                           src={item.src}
                           alt={item.alt}
                           draggable={false}
-                          style={{ top: -tile.start, height: cardH }}
+                          style={{ top: -tile.start, height: cw }}
                         />
                         <div className="cc__shade" />
                       </div>
@@ -406,3 +416,4 @@ export function CircularCarousel({
     </div>
   );
 }
+
